@@ -1,0 +1,78 @@
+# ── Framework ─────────────────────────────────────────────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+streamlit>=1.35.0
+pyyaml>=6.0.0
+
+# ── Phase 1: Ingestion — LangChain ────────────────────────────────────────────
+langchain>=0.2.0
+langchain-community>=0.2.0
+pypdf>=4.0.0
+python-docx>=1.1.0
+docx2txt>=0.8
+beautifulsoup4>=4.12.0
+
+# ── Phase 1: Ingestion — LlamaIndex ──────────────────────────────────────────
+llama-index-core>=0.10.0
+llama-index-readers-file>=0.1.0
+llama-index-readers-web>=0.1.0
+pymupdf>=1.24.0          # LlamaIndex PyMuPDFReader — better PDF table extraction
+lxml>=5.0.0              # LlamaIndex XMLReader
+pandas>=2.0.0            # LlamaIndex PandasCSVReader / PandasExcelReader
+nbformat>=5.9.0          # LlamaIndex IPYNBReader
+html2text>=2020.1.16     # LlamaIndex EpubReader HTML-to-text
+
+# ── Phase 1: Ingestion — Haystack ────────────────────────────────────────────
+haystack-ai>=2.5.0       # DOCXToDocument, HTMLToDocument, PPTXToDocument
+
+# ── Phase 1 extras: Office + EPUB + RTF ──────────────────────────────────────
+openpyxl>=3.1.0
+python-pptx>=0.6.23
+ebooklib>=0.18
+striprtf>=0.0.26
+
+# ── Optional heavy loaders (install manually when needed) ─────────────────────
+# pip install tika                                 # Haystack TikaDocumentConverter (needs Java)
+# pip install "unstructured[pdf,docx,pptx]"       # LlamaIndex/Haystack UnstructuredReader
+# brew install libmagic poppler tesseract          # macOS deps for unstructured
+
+# Optional universal fallback (requires system deps on macOS):
+#   brew install libmagic poppler tesseract
+#   pip install "unstructured[pdf,docx,pptx,xlsx]"
+
+# ── Phase 2: Chunking ─────────────────────────────────────────────────────────
+langchain-text-splitters>=0.2.0  # LangChain chunkers (split from langchain>=0.2)
+tiktoken>=0.7.0                  # LangChain TokenTextSplitter, LlamaIndex TokenTextSplitter
+
+# Optional (install manually when needed):
+# pip install llama-index-embeddings-huggingface sentence-transformers
+#   → enables llamaindex/semantic (SemanticSplitterNodeParser)
+# pip install tree-sitter tree-sitter-languages
+#   → enables llamaindex/code (CodeSplitter with syntax-aware splits)
+# pip install nltk && python -c "import nltk; nltk.download('punkt')"
+#   → improves haystack/sentence accuracy
+
+# ── Phase 3: Embedding ────────────────────────────────────────────────────────
+ollama>=0.2.0               # local Ollama embedder (nomic-embed-text, mxbai, all-minilm)
+litellm>=1.40.0             # unified cloud embedding: OpenAI, Cohere, HuggingFace, Gemini, Mistral
+
+# Optional tracing (install manually when needed):
+# pip install langfuse                              # Langfuse LLM observability
+#   Requires env vars: LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY
+
+# ── Phase 4: Vector DB ────────────────────────────────────────────────────────
+chromadb>=0.5.0             # ChromaDB local persistent (default)
+qdrant-client>=1.9.0        # Qdrant local + cloud
+faiss-cpu>=1.8.0            # FAISS exact + approximate (in-memory)
+
+# Optional vector stores (install manually when needed):
+# pip install pinecone                              # Pinecone serverless (PINECONE_API_KEY)
+# pip install "weaviate-client>=4.0.0"             # Weaviate cloud (WEAVIATE_URL + WEAVIATE_API_KEY)
+# pip install lancedb pyarrow                      # LanceDB local columnar
+# pip install psycopg2-binary pgvector             # pgvector (PostgreSQL + RAGX_PGVECTOR_URL)
+# pip install "pymilvus>=2.4.0"                    # Milvus Lite local (no server needed)
+
+# ── Phases 5–8 dependencies added here as each phase is built ─────────────────
