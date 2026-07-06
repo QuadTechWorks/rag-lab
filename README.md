@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)
 ![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B)
 ![Phases](https://img.shields.io/badge/Phases%20Complete-1%20%E2%80%93%204%20of%208-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue)
 
 ---
 
@@ -377,4 +377,6 @@ pip install langfuse                        # LLM tracing
 
 ## License
 
-MIT © [QuadTechWorks](https://github.com/QuadTechWorks)
+Apache License 2.0 © [QuadTechWorks](https://github.com/QuadTechWorks)
+
+See [LICENSE](./LICENSE) for the full license text.
