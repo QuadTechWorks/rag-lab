@@ -55,6 +55,10 @@ _HINTS = {
     ("bm25", "bm25l"):      'Config: {"k1": 1.5, "b": 0.75}',
     ("bm25", "bm25plus"):   'Config: {"k1": 1.5, "b": 0.75}',
     ("tfidf", "sklearn"):   'Config: {"ngram_max": 2, "stop_words": "english"}',
+    ("hybrid", "rrf"):      'Dense + BM25. Config: {"sparse": "tfidf/sklearn", "rrf_k": 60}',
+    ("hybrid", "linear"):   'Dense + BM25. Config: {"alpha": 0.7} (1.0 = dense only)',
+    ("ensemble", "rrf"):    'Config: {"retrievers": ["bm25/okapi", "tfidf/sklearn", '
+                            '{"name": "vector/dense", "weight": 2}]}',
 }
 all_keys = [f"{p}/{n}" for p, names in providers.items() for n in names]
 

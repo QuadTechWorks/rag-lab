@@ -10,7 +10,7 @@
 
 ```
 Ingestion → Chunking → Embedding → Vector DB → Retriever → Reranker → Inference → Evaluation
-    ✅          ✅          ✅          ✅          🟡 Tier 1   🔲          🔲          🔲
+    ✅          ✅          ✅          ✅          🟡 T1+T2    🔲          🔲          🔲
 ```
 
 ---
@@ -308,7 +308,7 @@ git config user.email "tharaniesp@users.noreply.github.com"
 
 ---
 
-## Phase 5 — Retriever (Tier 1 complete: 6 retrievers)
+## Phase 5 — Retriever (Tier 1 + Tier 2 complete: 9 retrievers)
 
 | Retriever | Needs | Config |
 |---|---|---|
@@ -321,4 +321,10 @@ git config user.email "tharaniesp@users.noreply.github.com"
 - API: `POST /api/retrieve/run`, `GET/DELETE /api/retrieve/results`, `GET /api/providers/retriever`.
 - Lifecycle: `RETRIEVERS.create(...)` -> `index(corpus)` -> `retrieve(query, top_k, filters)`. Sparse retrievers use `embedding_store` as corpus (no vector DB needed); dense/MMR get `vector_store` + `embedder` injected by the route.
 - Sparse retrievers drop chunks with no query-token overlap. Index is rebuilt per request.
-- Next: Tier 2 hybrid (`hybrid/rrf`, `hybrid/linear`, `ensemble/rrf`), then Tier 3 after Phase 7.
+- **Tier 2 (fusion, no LLM)** — composites that wrap child retrievers (`providers/retriever/hybrid/_base.py` `FusionBase`, math in `core/fusion.py`):
+  - `hybrid/rrf` — dense + sparse, Reciprocal Rank Fusion. Config: `dense`, `sparse` (default `bm25/okapi`), `dense_config`, `sparse_config`, `rrf_k`, `fetch_k`
+  - `hybrid/linear` — `alpha*dense + (1-alpha)*sparse`, min-max normalised. Config adds `alpha`
+  - `ensemble/rrf` — any N children, weighted RRF. Config: `retrievers: ["bm25/okapi", {"name": "vector/dense", "weight": 2}]`
+  - Results carry `metadata.component_ranks` (rank per child). The route injects vector store + embedder into composites; with no store connected, a `vector/dense` child raises a clear error (use `sparse` only via `ensemble/rrf` of sparse retrievers).
+  - Bad config -> HTTP 400. Vector-store metadata filters depend on the store; sparse filters are exact-match.
+- Next: Tier 3 (LLM-augmented) after Phase 7.

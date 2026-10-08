@@ -15,6 +15,9 @@ router = APIRouter(prefix="/retrieve", tags=["retriever"])
 
 # Retrievers that query the active vector store with an embedded query.
 _NEEDS_VECTOR_STORE = {("vector", "dense"), ("mmr", "cosine")}
+# Composite retrievers wrapping children; the store/embedder are injected when available
+# and each child raises a clear error if it needs one that is missing.
+_COMPOSITE_PROVIDERS = {"hybrid", "ensemble"}
 
 
 class RunRequest(BaseModel):
@@ -39,11 +42,13 @@ def run_retriever(req: RunRequest) -> dict:
         )
 
     kwargs = dict(req.config)
-    if (req.provider, req.retriever) in _NEEDS_VECTOR_STORE:
+    composite = req.provider in _COMPOSITE_PROVIDERS
+    if composite or (req.provider, req.retriever) in _NEEDS_VECTOR_STORE:
         try:
             kwargs["vector_store"] = vector_store_manager.get_active()
         except RuntimeError as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
+            if not composite:
+                raise HTTPException(status_code=400, detail=str(exc))
         if not EMBEDDERS.is_registered(req.embed_provider, req.embed_name):
             raise HTTPException(
                 status_code=400,
@@ -54,15 +59,20 @@ def run_retriever(req: RunRequest) -> dict:
                                                   name=req.embed_name)
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Embedder error: {exc}")
-    else:
-        if not embedding_store.all():
-            raise HTTPException(
-                status_code=404,
-                detail="No embedded chunks found. Run Phase 3 (POST /api/embed/run) first.",
-            )
+    elif not embedding_store.all():
+        raise HTTPException(
+            status_code=404,
+            detail="No embedded chunks found. Run Phase 3 (POST /api/embed/run) first.",
+        )
 
     try:
         retriever = RETRIEVERS.create(req.provider, req.retriever, **kwargs)
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid retriever config: {exc}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Retrieval error: {exc}")
+
+    try:
         t0 = time.perf_counter()
         retriever.index(embedding_store.all())
         t_index = time.perf_counter() - t0
