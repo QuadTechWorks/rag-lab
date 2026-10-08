@@ -75,4 +75,9 @@ faiss-cpu>=1.8.0            # FAISS exact + approximate (in-memory)
 # pip install psycopg2-binary pgvector             # pgvector (PostgreSQL + RAGX_PGVECTOR_URL)
 # pip install "pymilvus>=2.4.0"                    # Milvus Lite local (no server needed)
 
-# ── Phases 5–8 dependencies added here as each phase is built ─────────────────
+# ── Phase 5: Retriever ────────────────────────────────────────────────────────
+rank_bm25>=0.2.2            # bm25/okapi, bm25/bm25l, bm25/bm25plus
+scikit-learn>=1.3.0         # tfidf/sklearn
+numpy>=1.26.0               # mmr/cosine
+
+# ── Phases 6–8 dependencies added here as each phase is built ─────────────────

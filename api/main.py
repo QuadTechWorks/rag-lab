@@ -20,7 +20,7 @@ logger = logging.getLogger("ragx.api")
 
 def _discover_providers() -> None:
     """Import all provider modules so their @register decorators fire."""
-    from core.registry import LOADERS, CHUNKERS, EMBEDDERS, VECTOR_STORES
+    from core.registry import LOADERS, CHUNKERS, EMBEDDERS, VECTOR_STORES, RETRIEVERS
 
     providers_root = Path(__file__).parent.parent / "providers"
 
@@ -36,11 +36,14 @@ def _discover_providers() -> None:
     loaded = VECTOR_STORES.discover(providers_root / "vectordb", "providers.vectordb")
     logger.info("VectorDB providers loaded: %s", loaded)
 
+    loaded = RETRIEVERS.discover(providers_root / "retriever", "providers.retriever")
+    logger.info("Retriever providers loaded: %s", loaded)
+
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="RAGx",
-        description="Multi-provider RAG experimentation platform — Phases 1–4",
+        description="Multi-provider RAG experimentation platform — Phases 1–5",
         version="2.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
@@ -60,19 +63,21 @@ def create_app() -> FastAPI:
     from api.routes.chunking import router as chunking_router
     from api.routes.embedding import router as embedding_router
     from api.routes.vectordb import router as vectordb_router
+    from api.routes.retriever import router as retriever_router
 
     app.include_router(providers_router, prefix="/api")
     app.include_router(ingestion_router, prefix="/api")
     app.include_router(chunking_router, prefix="/api")
     app.include_router(embedding_router, prefix="/api")
     app.include_router(vectordb_router, prefix="/api")
+    app.include_router(retriever_router, prefix="/api")
 
     @app.get("/health")
     def health() -> dict:
         return {
             "status": "ok",
             "service": "ragx-api",
-            "phases": ["ingestion", "chunking", "embedding", "vectordb"],
+            "phases": ["ingestion", "chunking", "embedding", "vectordb", "retriever"],
         }
 
     return app

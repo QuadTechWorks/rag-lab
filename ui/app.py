@@ -69,6 +69,8 @@ st.markdown("""
 | Page | Phase | What it does |
 |------|-------|-------------|
 | 1 Ingestion | Phase 1 | Load files/URLs via LangChain, LlamaIndex, Haystack or Custom |
-| 2 Chunking | Phase 2 | *(coming next)* |
-| 3 Embedding | Phase 3 | *(coming next)* |
+| 2 Chunking | Phase 2 | Split documents with 17 chunking strategies |
+| 3 Embedding | Phase 3 | Embed chunks with local or cloud embedders |
+| 4 Vector DB | Phase 4 | Index vectors and search across 10 vector stores |
+| 5 Retriever | Phase 5 | Run and compare BM25, TF-IDF, dense and MMR retrievers |
 """)
