@@ -10,15 +10,15 @@ class FusionBase(BaseRetriever):
 
     Children are given as "provider/name" strings or
     {"name": "provider/name", "config": {...}, "weight": 1.0}.
-    `vector_store` / `embedder` (injected by the API) are passed to every child.
+    `vector_store` / `embedder` / `llm` (injected by the API) are passed to every child.
     Each child is asked for `fetch_k` results (default max(4*top_k, 20)).
     Subclasses implement `_fuse(ranked_lists, weights) -> {chunk_id: score}`.
     """
     provider: str = ""
     variant: str = ""
 
-    def __init__(self, vector_store=None, embedder=None, fetch_k: int | None = None,
-                 **kwargs):
+    def __init__(self, vector_store=None, embedder=None, llm=None,
+                 fetch_k: int | None = None, **kwargs):
         super().__init__(**kwargs)
         self._fetch_k = fetch_k
         self._specs = self._child_specs(kwargs)
@@ -29,7 +29,7 @@ class FusionBase(BaseRetriever):
                 raise ValueError(f"Child retriever {key!r} not registered. "
                                  f"Available: {RETRIEVERS.available()}")
             child = RETRIEVERS.create(prov, name, vector_store=vector_store,
-                                      embedder=embedder, **cfg)
+                                      embedder=embedder, llm=llm, **cfg)
             self._children.append((key, weight, child))
 
     def _child_specs(self, kwargs: dict) -> list[tuple[str, dict, float]]:

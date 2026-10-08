@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from core.registry import LOADERS, CHUNKERS, EMBEDDERS, VECTOR_STORES, RETRIEVERS
+from core.registry import LOADERS, CHUNKERS, EMBEDDERS, VECTOR_STORES, RETRIEVERS, LLMS
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -13,6 +13,7 @@ def list_all_providers() -> dict:
         "embedding":  EMBEDDERS.available(),
         "vectordb":   VECTOR_STORES.available(),
         "retriever":  RETRIEVERS.available(),
+        "llm":        LLMS.available(),
     }
 
 
@@ -39,3 +40,8 @@ def list_vectordb_providers() -> dict:
 @router.get("/retriever")
 def list_retriever_providers() -> dict:
     return RETRIEVERS.available()
+
+
+@router.get("/llm")
+def list_llm_providers() -> dict:
+    return LLMS.available()

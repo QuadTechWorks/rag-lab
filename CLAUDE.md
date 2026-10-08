@@ -10,7 +10,7 @@
 
 ```
 Ingestion → Chunking → Embedding → Vector DB → Retriever → Reranker → Inference → Evaluation
-    ✅          ✅          ✅          ✅          🟡 T1+T2    🔲          🔲          🔲
+    ✅          ✅          ✅          ✅          ✅ (T1-3)   🔲          🔲          🔲
 ```
 
 ---
@@ -308,7 +308,7 @@ git config user.email "tharaniesp@users.noreply.github.com"
 
 ---
 
-## Phase 5 — Retriever (Tier 1 + Tier 2 complete: 9 retrievers)
+## Phase 5 — Retriever (complete: 13 retrievers, Tiers 1-3)
 
 | Retriever | Needs | Config |
 |---|---|---|
@@ -327,4 +327,12 @@ git config user.email "tharaniesp@users.noreply.github.com"
   - `ensemble/rrf` — any N children, weighted RRF. Config: `retrievers: ["bm25/okapi", {"name": "vector/dense", "weight": 2}]`
   - Results carry `metadata.component_ranks` (rank per child). The route injects vector store + embedder into composites; with no store connected, a `vector/dense` child raises a clear error (use `sparse` only via `ensemble/rrf` of sparse retrievers).
   - Bad config -> HTTP 400. Vector-store metadata filters depend on the store; sparse filters are exact-match.
-- Next: Tier 3 (LLM-augmented) after Phase 7.
+- **Tier 3 (LLM-augmented)** — `providers/retriever/advanced/`, built on `AdvancedBase` (wraps a `base` retriever, default `vector/dense`; any retriever can be the base, e.g. `hybrid/rrf`). Request needs `llm_provider`/`llm_name`/`llm_config` (e.g. `ollama`/`chat`/`{"model": "llama3.2"}`):
+  - `advanced/hyde` — embeds an LLM-written hypothetical answer (dense only). `include_query`
+  - `advanced/multi_query` — LLM rewordings, per-query retrieval, RRF merge. `n_queries`
+  - `advanced/step_back` — original + abstracted question, RRF merge
+  - `advanced/self_query` — LLM extracts exact-match metadata filters; schema learned from corpus metadata (`max_values`), invalid fields/values discarded; request filters win
+  - Results carry `queries` / `step_back_query` / `hypothetical_passage` / `inferred_filters` in metadata for explainability.
+- **Minimal LLM layer (Phase 7 foundation, added for Tier 3):** `core/interfaces/base_llm.py` (`generate(prompt, system, temperature)`), `LLMS` registry, `providers/llm/ollama/chat.py` (default `llama3.2`), `providers/llm/litellm/chat.py` (any LiteLLM model string; needs provider API key env var). Phase 7 should extend these, not replace them.
+- Caveat: chroma `where` with several filter keys needs `$and` — the store layer does not translate multi-key filters yet, so multi-field self-query filters may fail on `chroma/local`.
+- Tested with a scripted fake LLM + faiss/flat; not yet run against a real Ollama/cloud model.

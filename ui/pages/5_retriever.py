@@ -37,6 +37,7 @@ with st.sidebar:
 try:
     providers: dict = _raise(requests.get(f"{API}/providers/retriever", timeout=_T))
     embed_providers: dict = _raise(requests.get(f"{API}/providers/embedding", timeout=_T))
+    llm_providers: dict = _raise(requests.get(f"{API}/providers/llm", timeout=_T))
     estats = _raise(requests.get(f"{API}/embed/stats", timeout=_T))
     vstatus = _raise(requests.get(f"{API}/vectordb/status", timeout=_T))
 except Exception as exc:
@@ -57,6 +58,11 @@ _HINTS = {
     ("tfidf", "sklearn"):   'Config: {"ngram_max": 2, "stop_words": "english"}',
     ("hybrid", "rrf"):      'Dense + BM25. Config: {"sparse": "tfidf/sklearn", "rrf_k": 60}',
     ("hybrid", "linear"):   'Dense + BM25. Config: {"alpha": 0.7} (1.0 = dense only)',
+    ("advanced", "hyde"):   "Needs an LLM + vector store. Config: {\"include_query\": true}",
+    ("advanced", "multi_query"): 'Needs an LLM. Config: {"n_queries": 3, "base": "hybrid/rrf"}',
+    ("advanced", "step_back"):   'Needs an LLM. Config: {"base": "bm25/okapi"}',
+    ("advanced", "self_query"):  'Needs an LLM. Filters learned from chunk metadata. '
+                                 'Config: {"max_values": 20, "base": "vector/dense"}',
     ("ensemble", "rrf"):    'Config: {"retrievers": ["bm25/okapi", "tfidf/sklearn", '
                             '{"name": "vector/dense", "weight": 2}]}',
 }
@@ -83,8 +89,12 @@ with tab_run:
         top_k = st.slider("Top K", 1, 20, 5)
         ep = st.selectbox("Embed provider", list(embed_providers), key="r_ep")
         en = st.selectbox("Embedder", embed_providers.get(ep, []), key="r_en")
-        st.caption("Embedder is used only by vector/dense and mmr/cosine. "
+        st.caption("Embedder is used by dense, MMR, hybrid and advanced retrievers. "
                    "It must match the one used for indexing.")
+        llm_opts = ["(none)"] + [f"{p}/{n}" for p, ns in llm_providers.items() for n in ns]
+        llm_sel = st.selectbox("LLM (advanced/* only)", llm_opts, key="r_llm")
+        llm_model = st.text_input("LLM model", placeholder="llama3.2 / gpt-4o-mini",
+                                  disabled=llm_sel == "(none)")
 
     if st.button("Run", type="primary", use_container_width=True,
                  disabled=not ((query or "").strip() and selected)):
@@ -101,6 +111,9 @@ with tab_run:
                         "provider": prov, "retriever": name, "query": query.strip(),
                         "top_k": top_k, "config": cfgs.get(key, {}),
                         "embed_provider": ep, "embed_name": en,
+                        **({"llm_provider": llm_sel.split("/")[0], "llm_name": llm_sel.split("/")[1],
+                            "llm_config": {"model": llm_model} if llm_model.strip() else {}}
+                           if llm_sel != "(none)" else {}),
                     })))
                 except Exception as exc:
                     runs.append({"retriever": key, "error": str(exc)})

@@ -20,7 +20,7 @@ logger = logging.getLogger("ragx.api")
 
 def _discover_providers() -> None:
     """Import all provider modules so their @register decorators fire."""
-    from core.registry import LOADERS, CHUNKERS, EMBEDDERS, VECTOR_STORES, RETRIEVERS
+    from core.registry import LOADERS, CHUNKERS, EMBEDDERS, VECTOR_STORES, RETRIEVERS, LLMS
 
     providers_root = Path(__file__).parent.parent / "providers"
 
@@ -38,6 +38,9 @@ def _discover_providers() -> None:
 
     loaded = RETRIEVERS.discover(providers_root / "retriever", "providers.retriever")
     logger.info("Retriever providers loaded: %s", loaded)
+
+    loaded = LLMS.discover(providers_root / "llm", "providers.llm")
+    logger.info("LLM providers loaded: %s", loaded)
 
 
 def create_app() -> FastAPI:

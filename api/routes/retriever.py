@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from core.registry import RETRIEVERS, EMBEDDERS
+from core.registry import RETRIEVERS, EMBEDDERS, LLMS
 from api.embedding_store import embedding_store
 from api.retrieval_store import retrieval_store
 from api.vector_store_manager import vector_store_manager
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/retrieve", tags=["retriever"])
 _NEEDS_VECTOR_STORE = {("vector", "dense"), ("mmr", "cosine")}
 # Composite retrievers wrapping children; the store/embedder are injected when available
 # and each child raises a clear error if it needs one that is missing.
-_COMPOSITE_PROVIDERS = {"hybrid", "ensemble"}
+_COMPOSITE_PROVIDERS = {"hybrid", "ensemble", "advanced"}
 
 
 class RunRequest(BaseModel):
@@ -29,6 +29,9 @@ class RunRequest(BaseModel):
     config: dict = {}
     embed_provider: str = "ollama"   # only used by vector-store-backed retrievers
     embed_name: str = "nomic"
+    llm_provider: str | None = None  # used by advanced/* retrievers (and ensembles of them)
+    llm_name: str = "chat"
+    llm_config: dict = {}            # e.g. {"model": "llama3.2"}
 
 
 @router.post("/run")
@@ -59,6 +62,18 @@ def run_retriever(req: RunRequest) -> dict:
                                                   name=req.embed_name)
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Embedder error: {exc}")
+        if req.llm_provider:
+            if not LLMS.is_registered(req.llm_provider, req.llm_name):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"LLM {req.llm_provider}/{req.llm_name} not registered. "
+                           f"Available: {LLMS.available()}",
+                )
+            try:
+                kwargs["llm"] = LLMS.create(req.llm_provider, req.llm_name,
+                                            **req.llm_config)
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail=f"LLM error: {exc}")
     elif not embedding_store.all():
         raise HTTPException(
             status_code=404,
